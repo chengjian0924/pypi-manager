@@ -4,6 +4,7 @@
 """
 import base64
 import contextlib
+import datetime
 import gzip
 import io
 import json
@@ -35,6 +36,7 @@ from pypi_manager.services.auth_service import create_user
 from pypi_manager.services.storage_service import (backup_now, inspect_backup,
                                                    list_backups, reconcile_storage,
                                                    restore_backup)
+from pypi_manager.services import storage_service
 
 # 保持原测试对 pm.* 的访问方式，仅把单文件模块替换为分层后的实现
 pm = SimpleNamespace(
@@ -61,6 +63,35 @@ def make_wheel(name="pkg", extra="x"):
 
 def wheel(name="pkg", version="1.0"):
     return f"{name}-{version}-py3-none-any.whl"
+
+
+def read_http_response(sock, limit=65536):
+    """把一次响应完整读出来：先读到响应头结束，再按 Content-Length 补齐 body。
+
+    不能只 recv 一次——服务端先写响应头、再写 body，两次 send 在 Linux 上
+    可能被拆成两个 TCP 分段，一次 recv 只能拿到头，断言 body 就会误报。
+    """
+    buf = b""
+    while b"\r\n\r\n" not in buf and len(buf) < limit:
+        part = sock.recv(limit)
+        if not part:
+            break
+        buf += part
+    head, sep, body = buf.partition(b"\r\n\r\n")
+    length = 0
+    for line in head.split(b"\r\n")[1:]:
+        key, _, value = line.partition(b":")
+        if key.strip().lower() == b"content-length":
+            try:
+                length = int(value.strip())
+            except ValueError:
+                length = 0
+    while len(body) < length:
+        part = sock.recv(limit)
+        if not part:
+            break
+        body += part
+    return head + sep + body
 
 
 class ServerTestCase(unittest.TestCase):
@@ -284,7 +315,7 @@ class TestUploadLimits(ServerTestCase):
         ).encode()
         with socket.create_connection(("127.0.0.1", self.port), timeout=10) as s:
             s.sendall(head + b"5\r\nhello\r\n0\r\n\r\n")
-            raw = s.recv(65536)
+            raw = read_http_response(s)
         self.assertIn(b" 411 ", raw.split(b"\r\n")[0])
         self.assertIn("分块传输".encode(), raw)
 
@@ -504,6 +535,33 @@ class TestRestoreSafety(ServerTestCase):
         old = pm.CFG["data"]
         pm.CFG["data"] = target
         self.addCleanup(lambda: pm.CFG.__setitem__("data", old))
+
+    def test_backup_keep_never_prunes_the_fresh_backup(self):
+        """同一秒内连续备份：目录名会重复、旧名字会被复用，淘汰不能删掉刚建好的那份
+
+        CI 上多个用例的备份能挤进同一秒：backup-<秒>、backup-<秒>-a1b2 …
+        旧的那份被淘汰后名字被下一次备份重新用上，若按名字排序淘汰，
+        新建的 backup-<秒> 会排在最后一位前面而被自己触发的清理删掉。
+        """
+        fixed = datetime.datetime(2026, 11, 9, 8, 41, 50)
+
+        class FixedDatetime:
+            @staticmethod
+            def now():
+                return fixed
+
+        dests = []
+        with mock.patch.object(storage_service, "datetime", FixedDatetime):
+            for i in range(5):
+                dests.append(self._backup("keep_%d" % i))
+
+        stored = pm.list_backups()
+        self.assertLessEqual(len(stored), 3, "应遵守 backup_keep=3")
+        keep = max(1, int(pm.CFG["backup_keep"]))
+        for dest in dests[-keep:]:
+            self.assertTrue(os.path.isdir(dest), "最新几份备份不能被淘汰：%s" % dest)
+            self.assertTrue(os.path.isfile(os.path.join(dest, "pypi.db")), dest)
+            self.assertTrue(pm.inspect_backup(dest)["ok"], dest)
 
     def test_list_backups_reports_integrity(self):
         dest = self._backup("list_a", "list_b")

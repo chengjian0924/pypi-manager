@@ -257,16 +257,24 @@ def inspect_backup(src: str) -> dict:
     return info
 
 
+def _backup_dirs(root: str) -> list[str]:
+    """备份目录下的备份子目录，按修改时间倒序（最新的在前）。
+
+    不能只按名字排：名字里的时间戳只精确到秒，同一秒内的多份备份靠随机后缀
+    区分，后缀大小与先后无关；被淘汰过的 backup-<秒> 名字还会被下一次备份复用。
+    """
+    names = [n for n in os.listdir(root)
+             if n.startswith("backup-") and os.path.isdir(os.path.join(root, n))]
+    names.sort(key=lambda n: (os.path.getmtime(os.path.join(root, n)), n), reverse=True)
+    return names
+
+
 def list_backups() -> list[dict]:
-    """备份目录下的备份点，按名称（即时间）倒序。"""
+    """备份目录下的备份点，按修改时间倒序（最新在前）。"""
     root = CFG.get("backup_dir") or ""
     if not root or not os.path.isdir(root):
         return []
-    names = sorted(
-        (n for n in os.listdir(root)
-         if n.startswith("backup-") and os.path.isdir(os.path.join(root, n))),
-        reverse=True)
-    return [inspect_backup(os.path.join(root, n)) for n in names]
+    return [inspect_backup(os.path.join(root, n)) for n in _backup_dirs(root)]
 
 
 
@@ -303,10 +311,22 @@ def backup_now() -> str:
                   f, ensure_ascii=False)
 
     keep = max(1, int(CFG["backup_keep"]))
-    existing = sorted(d for d in os.listdir(root) if d.startswith("backup-"))
-    for old in existing[:-keep]:
-        shutil.rmtree(os.path.join(root, old), ignore_errors=True)
+    _prune_backups(root, keep, keep_current=dest)
     return os.path.abspath(dest)
+
+
+def _prune_backups(root: str, keep: int, keep_current: str | None = None):
+    """只保留最近 keep 份备份，keep_current 指定的这一份永不参与淘汰。
+
+    名字排序在这里是错的：同一秒内连续备份会产生 backup-<秒>、backup-<秒>-a1b2……
+    这种重名，且被删掉的 backup-<秒> 名字会被下一次备份重新用上——按名字排序时
+    新的 backup-<秒> 反而排在最前面，会被自己触发的清理删掉。所以按 mtime 淘汰，
+    并显式跳过刚建好的那一份。
+    """
+    current = os.path.basename(keep_current) if keep_current else ""
+    others = [n for n in _backup_dirs(root) if n != current]   # 已按 mtime 倒序
+    for name in others[max(0, keep - 1):]:
+        shutil.rmtree(os.path.join(root, name), ignore_errors=True)
 
 
 def _archive_current(root: str) -> str | None:
