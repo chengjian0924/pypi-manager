@@ -1,0 +1,25 @@
+# Dockerfile 专属忽略规则：构建上下文是仓库根目录。
+# 显式排除「另一套部署方案」以及所有非运行时内容，保证镜像构建不接触 deploy/vm/。
+# 注：即使某些旧版 Docker 不识别 Dockerfile 专属 ignore 文件，
+#     Dockerfile 中的 COPY 清单也已硬保证只有 backend/、frontend/、
+#     deploy/docker/entrypoint.sh、deploy/docker/healthcheck.py 会进入镜像。
+.git
+.github
+.workbuddy
+docs
+tests
+deploy/vm
+deploy/README.md
+deploy/docker/bin
+deploy/docker/dist
+deploy/docker/systemd
+deploy/docker/runtime
+deploy/docker/README.md
+deploy/docker/.gitignore
+deploy/docker/compose.yaml
+deploy/docker/.env
+deploy/docker/.env.example
+deploy/docker/Dockerfile.dockerignore
+**/__pycache__
+**/*.py[cod]
+**/.DS_Store

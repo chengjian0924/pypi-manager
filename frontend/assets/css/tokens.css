@@ -1,0 +1,46 @@
+:root{
+  color-scheme:light;
+  --bg:#f5f7fa;--surface:#fff;--surface-2:#f8fafc;--surface-3:#eef1f6;
+  --border:#e2e7ef;--border-strong:#cfd7e3;
+  --text:#0e1726;--text-2:#475569;--text-3:#8895a8;
+  --accent:#2f5fd0;--accent-hover:#244fae;--accent-ink:#fff;--accent-2:#7c9ef5;
+  --accent-soft:#eef3fe;--accent-border:#c7d7f7;
+  --danger:#c0392f;--danger-soft:#fdeeed;--danger-border:#f0cfcb;
+  --ok:#12734a;--ok-soft:#e9f7f0;
+  --warn:#9a6410;--warn-soft:#fdf5e6;--warn-border:#efdcb6;
+  --code-bg:#0f1724;--code-ink:#dbe4f2;--code-border:#1e2a3d;
+  --toast-bg:#111a28;--toast-ink:#eef3fa;--toast-border:rgba(255,255,255,.08);--toast-err:#7f2b23;
+  --overlay:rgba(15,23,42,.42);
+  --shadow-sm:0 1px 2px rgba(15,23,42,.05);
+  --shadow-md:0 10px 30px -12px rgba(15,23,42,.18);
+  --shadow-lg:0 28px 70px -20px rgba(15,23,42,.35);
+  --focus:0 0 0 3px rgba(47,95,208,.25);
+  --radius-xs:6px;--radius-sm:8px;--radius:10px;--radius-lg:14px;
+  /* 控件统一高度：所有按钮 / 输入框 / 下拉框按这三档对齐 */
+  --ctl-h:34px;--ctl-h-sm:28px;--ctl-h-xs:24px;--ctl-h-lg:40px;
+  --ctl-pad:13px;--ctl-pad-sm:10px;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  --glow-1:rgba(47,95,208,.10);--glow-2:rgba(122,92,220,.07);
+  /* 下拉框箭头（随主题变色，保证与文字同色系） */
+  --chevron:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238895a8' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+html[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0b1017;--surface:#121a25;--surface-2:#172130;--surface-3:#1e2a3b;
+  --border:#223047;--border-strong:#33445c;
+  --text:#e7edf6;--text-2:#a3b0c2;--text-3:#76849a;
+  --accent:#6f9dff;--accent-hover:#8cb2ff;--accent-ink:#0a1220;--accent-2:#a3c0ff;
+  --accent-soft:rgba(111,157,255,.13);--accent-border:rgba(111,157,255,.34);
+  --danger:#ff9287;--danger-soft:rgba(255,120,105,.13);--danger-border:rgba(255,146,135,.32);
+  --ok:#63d6a0;--ok-soft:rgba(99,214,160,.12);
+  --warn:#e2b25c;--warn-soft:rgba(226,178,92,.13);--warn-border:rgba(226,178,92,.32);
+  --code-bg:#0a0f18;--code-ink:#cfdaeb;--code-border:#1e2b3d;
+  --toast-bg:#1a2536;--toast-ink:#eaf0f9;--toast-border:rgba(255,255,255,.07);--toast-err:#5c211b;
+  --overlay:rgba(3,7,12,.62);
+  --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+  --shadow-md:0 14px 34px -14px rgba(0,0,0,.65);
+  --shadow-lg:0 30px 80px -20px rgba(0,0,0,.8);
+  --focus:0 0 0 3px rgba(111,157,255,.3);
+  --glow-1:rgba(80,130,255,.12);--glow-2:rgba(150,100,255,.09);
+  --chevron:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2376849a' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}

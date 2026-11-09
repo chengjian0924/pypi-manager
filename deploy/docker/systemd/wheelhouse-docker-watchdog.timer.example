@@ -1,0 +1,30 @@
+# ============================================================================
+# 方案 B（Docker 部署）：宿主侧健康看门狗定时器
+# ----------------------------------------------------------------------------
+# 开机自启的另外两件事（本 timer 无法代替）：
+#   sudo systemctl enable docker          # Docker 守护进程开机自启
+#   compose.yaml 的 restart: unless-stopped  # daemon 起来后自动恢复容器
+#
+# 计划内停机先停 timer，否则看门狗可能把容器拉起：
+#   sudo systemctl stop wheelhouse-docker-watchdog.timer
+#   deploy/docker/bin/stop.sh
+#   # ... 维护 ...
+#   deploy/docker/bin/start.sh
+#   sudo systemctl start wheelhouse-docker-watchdog.timer
+# 或创建暂停标记：
+#   touch deploy/docker/runtime/watchdog.pause && ... && rm deploy/docker/runtime/watchdog.pause
+# ============================================================================
+
+[Unit]
+Description=Run Wheelhouse Docker health watchdog every 30 seconds
+
+[Timer]
+# 开机 90s 后首次检查（等 Docker daemon 与容器完成恢复 / HEALTHCHECK start-period）
+OnBootSec=90
+OnUnitActiveSec=30
+AccuracySec=5s
+Persistent=false
+Unit=wheelhouse-docker-watchdog.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,72 @@
+# ============================================================================
+# 方案 A（内网虚拟机直接部署）：systemd 托管单元 —— 24×7 运行的第一层
+# ----------------------------------------------------------------------------
+# 与 bin/start.sh 是「同一套启动逻辑」：这里用 --foreground 让脚本 exec 后端进程，
+# 便于 systemd 直接接管 PID、信号与重启策略。也可不用本单元，直接用 start/stop.sh
+# （但那种模式没有进程守护，需要 watchdog.sh --loop 兜底）。
+#
+# 三层自愈分工（互不重叠）：
+#   1. 本单元 Restart=always          → 进程崩溃 / 被 OOM killer 杀掉 → 5s 内拉起
+#   2. enable + WantedBy              → 宿主机重启后自动拉起
+#      StartLimitIntervalSec/Burst    → 防「重启也修不好」时的无限重启风暴
+#   3. wheelhouse-watchdog.timer      → 进程还在但 /health 不响应（假死）→ 主动重启
+#
+# 安装：
+#   sudo install -d -o wheelhouse -g wheelhouse /var/backups/wheelhouse
+#   sudo install -d -m 0750 /etc/wheelhouse
+#   sudo install -m 0600 deploy/vm/config/wheelhouse.env /etc/wheelhouse/wheelhouse.env
+#   sudo cp deploy/vm/systemd/wheelhouse.service.example \
+#           /etc/systemd/system/wheelhouse.service
+#   sudo cp deploy/vm/systemd/wheelhouse-watchdog.service.example \
+#           /etc/systemd/system/wheelhouse-watchdog.service
+#   sudo cp deploy/vm/systemd/wheelhouse-watchdog.timer.example \
+#           /etc/systemd/system/wheelhouse-watchdog.timer
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now wheelhouse
+#   sudo systemctl enable --now wheelhouse-watchdog.timer
+#   sudo systemctl status wheelhouse
+#   journalctl -u wheelhouse -f
+#
+# 说明：仓库需部署到 /opt/wheelhouse/app（内含 backend/、frontend/、deploy/vm/）。
+#       若改了路径，请同步修改 ExecStart 与 VM_WH_APP_DIR。
+# ============================================================================
+
+[Unit]
+Description=Wheelhouse intranet Python package repository (VM deployment)
+After=network-online.target local-fs.target
+Wants=network-online.target
+RequiresMountsFor=/var/lib/wheelhouse /var/backups/wheelhouse
+# 5 分钟内最多重启 10 次；超过则进入 failed 并停止重启，等待人工处理。
+# 避免配置错误 / 磁盘写满导致进程反复退出、日志刷屏、SQLite 反复打开。
+StartLimitIntervalSec=300
+StartLimitBurst=10
+
+[Service]
+Type=simple
+User=wheelhouse
+Group=wheelhouse
+Environment=VM_WH_CONF_FILE=/etc/wheelhouse/wheelhouse.env
+ExecStart=/opt/wheelhouse/app/deploy/vm/bin/start.sh --foreground
+# always 比 on-failure 更严格：进程以 exit 0 意外退出时也会被拉起；
+# 手工 systemctl stop 不会触发重启。
+Restart=always
+RestartSec=5
+TimeoutStartSec=90
+KillSignal=SIGTERM
+TimeoutStopSec=40
+RuntimeDirectory=wheelhouse
+RuntimeDirectoryMode=0750
+StateDirectory=wheelhouse
+StateDirectoryMode=0750
+LogsDirectory=wheelhouse
+LogsDirectoryMode=0750
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/wheelhouse /var/backups/wheelhouse /var/log/wheelhouse /run/wheelhouse
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+[Install]
+WantedBy=multi-user.target

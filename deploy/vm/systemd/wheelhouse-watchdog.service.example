@@ -1,0 +1,36 @@
+# ============================================================================
+# 方案 A（虚拟机直接部署）：健康看门狗 oneshot 服务 —— 24×7 运行的第三层
+# 由 wheelhouse-watchdog.timer 每 30s 触发一次，也可手动执行：
+#   sudo systemctl start wheelhouse-watchdog.service
+#   journalctl -u wheelhouse-watchdog.service -n 50
+#
+# 为什么需要它：systemd 的 Restart=always 只能处理「进程退出」；
+# 进程仍在但线程池耗尽、端口不再响应、SQLite 长时间持锁等「假死」不会被发现。
+# 本单元按 /health 主动探测，连续失败后执行 VM_WH_WATCHDOG_RECOVER_CMD。
+#
+# 以 root 运行：默认恢复命令是 `systemctl restart wheelhouse`，普通用户无权执行。
+# 脚本本身只读配置、写 /run/wheelhouse/watchdog.state，不碰业务数据。
+# ============================================================================
+
+[Unit]
+Description=Wheelhouse VM deployment health watchdog (one-shot)
+After=wheelhouse.service
+RequiresMountsFor=/var/lib/wheelhouse
+
+[Service]
+Type=oneshot
+Environment=VM_WH_CONF_FILE=/etc/wheelhouse/wheelhouse.env
+ExecStart=/opt/wheelhouse/app/deploy/vm/bin/watchdog.sh
+TimeoutStartSec=180
+# 与主服务共用状态目录；root 可写，暂停标记也放这里
+RuntimeDirectory=wheelhouse
+RuntimeDirectoryMode=0750
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/run/wheelhouse /var/log/wheelhouse
+
+[Install]
+# 不要 enable 本服务；开机自启由 timer 负责
+# WantedBy=multi-user.target

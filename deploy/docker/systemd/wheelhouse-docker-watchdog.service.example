@@ -1,0 +1,37 @@
+# ============================================================================
+# 方案 B（Docker 部署）：宿主侧健康看门狗 oneshot 服务
+# ----------------------------------------------------------------------------
+# 注意：这是【Docker 方案自带】的宿主侧单元，与 deploy/vm/systemd/ 下的单元
+#       同名不同物、互不引用；两套方案各自只安装自己那一份。
+#
+# 为什么需要它：compose 的 restart: unless-stopped 只处理「容器进程退出」，
+# Docker 原生不会因为 HEALTHCHECK=unhealthy 自动重启容器（只有 Swarm 会）。
+# 本单元按容器健康状态主动探测，连续失败后执行 docker compose restart。
+#
+# 安装：
+#   sudo install -d -m 0750 /etc/wheelhouse-docker
+#   sudo install -m 0600 deploy/docker/.env /etc/wheelhouse-docker/.env
+#   sudo cp deploy/docker/systemd/wheelhouse-docker-watchdog.service.example \
+#           /etc/systemd/system/wheelhouse-docker-watchdog.service
+#   sudo cp deploy/docker/systemd/wheelhouse-docker-watchdog.timer.example \
+#           /etc/systemd/system/wheelhouse-docker-watchdog.timer
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now wheelhouse-docker-watchdog.timer
+#   journalctl -u wheelhouse-docker-watchdog.service -n 50
+#
+# 以 root 运行：需要访问 /var/run/docker.sock；脚本只读 .env、写 runtime/ 状态文件。
+# 如果部署路径不是 /opt/wheelhouse/app，请同步改 ExecStart 与 DK_ENV_FILE。
+# ============================================================================
+
+[Unit]
+Description=Wheelhouse Docker deployment health watchdog (one-shot)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+Environment=DK_ENV_FILE=/etc/wheelhouse-docker/.env
+ExecStart=/opt/wheelhouse/app/deploy/docker/bin/watchdog.sh
+TimeoutStartSec=240
+NoNewPrivileges=true
+PrivateTmp=true

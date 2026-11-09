@@ -1,0 +1,64 @@
+# ============================================================================
+# 方案 B：Docker 部署专用 Compose 定义
+# 只引用 deploy/docker/ 内的文件与仓库根的 backend/、frontend/；
+# 不引用 deploy/vm/ 的任何配置、脚本或产物。
+# 用法：docker compose --env-file deploy/docker/.env -f deploy/docker/compose.yaml up -d
+#      （建议统一通过 deploy/docker/bin/start.sh 调用）
+# ============================================================================
+name: wheelhouse-docker
+
+services:
+  wheelhouse:
+    image: ${DK_IMAGE_NAME:-wheelhouse-intranet}:${DK_IMAGE_TAG:-1.1}
+    container_name: ${DK_CONTAINER_NAME:-wheelhouse}
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile
+      args:
+        BASE_IMAGE: ${DK_BASE_IMAGE:-python:3.12-slim}
+    restart: ${DK_RESTART_POLICY:-unless-stopped}
+    user: "${DK_UID:-10001}:${DK_GID:-10001}"
+    stop_grace_period: 40s
+    ports:
+      - "${DK_HOST_BIND:-127.0.0.1}:${DK_HOST_PORT:-8081}:${DK_CONTAINER_PORT:-8080}"
+    volumes:
+      # 默认命名卷；改成绝对路径即为宿主机 bind 挂载（需 chown 到 DK_UID:DK_GID）
+      - ${DK_DATA_SOURCE:-wheelhouse-data}:/data
+      - ${DK_BACKUP_SOURCE:-wheelhouse-backup}:/backup
+      - ${DK_TLS_DIR:-./runtime/tls}:/tls:ro
+    environment:
+      TZ: ${DK_TZ:-Asia/Shanghai}
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONUNBUFFERED: "1"
+      WH_LISTEN_HOST: "0.0.0.0"
+      WH_LISTEN_PORT: "${DK_CONTAINER_PORT:-8080}"
+      WH_DATA_DIR: /data
+      WH_FRONTEND_DIR: /app/frontend
+      WH_BACKUP_DIR: /backup
+      WH_TLS_CERT: "${DK_TLS_CERT:-}"
+      WH_TLS_KEY: "${DK_TLS_KEY:-}"
+      WH_ALLOW_INSECURE_HTTP: "${DK_ALLOW_INSECURE_HTTP:-1}"
+      WH_REQUIRE_AUTH_FOR_READ: "${DK_REQUIRE_AUTH_FOR_READ:-1}"
+      WH_MAX_UPLOAD_MB: "${DK_MAX_UPLOAD_MB:-512}"
+      WH_MAX_WORKERS: "${DK_MAX_WORKERS:-64}"
+      WH_MIN_FREE_MB: "${DK_MIN_FREE_MB:-2048}"
+      WH_BACKUP_INTERVAL_HOURS: "${DK_BACKUP_INTERVAL_HOURS:-24}"
+      WH_BACKUP_KEEP: "${DK_BACKUP_KEEP:-14}"
+      WH_TRASH_DAYS: "${DK_TRASH_DAYS:-30}"
+      WH_TRASH_MAX_MB: "${DK_TRASH_MAX_MB:-2048}"
+      WH_AUDIT_MAX_MB: "${DK_AUDIT_MAX_MB:-10}"
+      WH_AUDIT_KEEP: "${DK_AUDIT_KEEP:-5}"
+      WH_LOG_LEVEL: "${DK_LOG_LEVEL:-INFO}"
+      WH_LOG_JSON: "${DK_LOG_JSON:-0}"
+      WH_SLOW_MS: "${DK_SLOW_MS:-1000}"
+    # 容器日志必须限容：json-file 默认无上限，长期运行会写满宿主盘。
+    # 改这两项需要重建容器（docker compose up -d），restart 不会生效。
+    logging:
+      driver: json-file
+      options:
+        max-size: "${DK_LOG_MAX_SIZE:-20m}"
+        max-file: "${DK_LOG_MAX_FILE:-5}"
+
+volumes:
+  wheelhouse-data:
+  wheelhouse-backup:

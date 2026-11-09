@@ -1,0 +1,33 @@
+# ============================================================================
+# 方案 A（虚拟机直接部署）：健康看门狗定时器 —— 24×7 运行的第三层（调度）
+# ----------------------------------------------------------------------------
+# 安装：
+#   sudo cp deploy/vm/systemd/wheelhouse-watchdog.timer.example \
+#           /etc/systemd/system/wheelhouse-watchdog.timer
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now wheelhouse-watchdog.timer
+#   systemctl list-timers wheelhouse-watchdog.timer
+#
+# 计划内停机（升级 / 恢复备份 / 迁移）务必先停 timer，否则看门狗会把服务拉起：
+#   sudo systemctl stop wheelhouse-watchdog.timer
+#   sudo systemctl stop wheelhouse
+#   # ... 维护 ...
+#   sudo systemctl start wheelhouse
+#   sudo systemctl start wheelhouse-watchdog.timer
+# 也可不下线 timer，改用暂停标记（看门狗见到即跳过）：
+#   sudo touch /run/wheelhouse/watchdog.pause && ... && sudo rm /run/wheelhouse/watchdog.pause
+# ============================================================================
+
+[Unit]
+Description=Run Wheelhouse VM health watchdog every 30 seconds
+
+[Timer]
+# 开机 60s 后首次检查（等主服务完成启动对账），之后每 30s 一次
+OnBootSec=60
+OnUnitActiveSec=30
+AccuracySec=5s
+Persistent=false
+Unit=wheelhouse-watchdog.service
+
+[Install]
+WantedBy=timers.target

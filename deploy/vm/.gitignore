@@ -1,0 +1,8 @@
+# 方案 A 本地产物 / 敏感配置，不纳入仓库
+config/wheelhouse.env
+run/
+logs/
+*.pid
+*.log
+watchdog.state
+watchdog.pause

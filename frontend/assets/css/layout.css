@@ -1,0 +1,135 @@
+/* ---------- 顶部 ---------- */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:22px 0 18px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.logo{width:40px;height:40px;flex:none;border-radius:11px;display:grid;place-items:center;
+  color:#fff;background:linear-gradient(145deg,var(--accent),var(--accent-2));
+  box-shadow:0 8px 18px -8px var(--accent)}
+html[data-theme="dark"] .logo{color:var(--accent-ink)}
+h1{margin:0;font-size:17px;font-weight:650;letter-spacing:-.01em;line-height:1.35}
+.sub{margin:1px 0 0;font-size:12px;color:var(--text-3)}
+/* 顶栏所有控件统一 34px 高，中线对齐 */
+.actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.user-chip{display:inline-flex;align-items:center;gap:7px;height:var(--ctl-h);
+  padding:0 12px;font-family:inherit;font-size:12.5px;color:var(--text-2);cursor:default;
+  background:var(--surface);border:1px solid var(--border);border-radius:999px;
+  max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  transition:background .15s,border-color .15s,color .15s}
+.user-chip svg{flex:none;opacity:.6}
+.user-chip .dot{width:7px;height:7px;flex:none;border-radius:50%;background:var(--text-3)}
+.user-chip.on{color:var(--ok);background:var(--ok-soft);border-color:transparent}
+.user-chip.on .dot{background:var(--ok)}
+/* 仍在使用初始密码时改为琥珀色，提示去修改 */
+.user-chip.warn{color:var(--warn);background:var(--warn-soft);border-color:var(--warn-border)}
+.user-chip.warn .dot{background:var(--warn)}
+
+/* ---------- 统计 ---------- */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;
+  margin:2px 0 20px}
+.stat{position:relative;background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;padding:14px 16px 14px 18px;box-shadow:var(--shadow-sm);overflow:hidden}
+.stat::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent);opacity:.85}
+.stat-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px}
+.stat-label{font-size:12px;color:var(--text-3)}
+.stat-ico{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;flex:none;
+  background:var(--accent-soft);color:var(--accent)}
+.stat b{display:block;font-size:24px;font-weight:650;letter-spacing:-.02em;line-height:1.25;
+  font-variant-numeric:tabular-nums}
+.stat-sub{display:block;margin-top:3px;font-size:11.5px;color:var(--text-3);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ---------- 回收站概览条 ---------- */
+.trash-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  margin:-6px 0 14px;padding:9px 14px;border:1px dashed var(--warn-border);
+  border-radius:10px;background:var(--warn-soft);font-size:12px;color:var(--text-2)}
+.trash-bar[hidden]{display:none!important}
+.trash-bar .tb-text{flex:1 1 auto;min-width:0;line-height:1.6}
+.trash-bar b{color:var(--warn);font-variant-numeric:tabular-nums}
+.trash-bar .btn{flex:none}
+
+/* ---------- 搜索框 ---------- */
+.search{position:relative;flex:1 1 240px;max-width:340px}
+.search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);
+  color:var(--text-3);pointer-events:none}
+.search input[type=text]{width:100%;padding-left:34px}
+
+/* ---------- 项目列表 ---------- */
+.projects{display:flex;flex-direction:column;gap:12px}
+
+/* ---------- 分页 ---------- */
+.pager{display:flex;flex-direction:column;align-items:center;gap:10px;margin:22px 0 4px}
+.pager[hidden]{display:none}
+.pager-ctl{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap}
+.pager-info{font-size:12.5px;color:var(--text-2);font-variant-numeric:tabular-nums;padding:0 2px}
+.pager-size{display:inline-flex;align-items:center;gap:6px;height:var(--ctl-h-sm);
+  font-size:12px;color:var(--text-3)}
+.pager-size select{width:auto;height:var(--ctl-h-sm);padding:0 26px 0 9px;font-size:12px;
+  border-radius:7px;background-position:right 8px center}
+.pager-count{font-size:12px;color:var(--text-3)}
+.pager-count b{color:var(--text-2);font-weight:600}
+
+/* ---------- 视图切换 ---------- */
+/* 「修改密码」：仅主界面展示，紧跟在「客户端配置」右侧 */
+#pwdNav{display:none}
+html.is-auth #pwdNav{display:inline-flex}
+html[data-view="users"] #pwdNav,
+html[data-view="users-new"] #pwdNav{display:none!important}
+/* 「返回账号列表」：注册用户页专用，紧跟「返回主界面」右侧 */
+#backToList{display:none}
+html[data-view="users-new"] #backToList{display:inline-flex}
+/* 「注册用户」：仅管理员在用户管理页显示 */
+#createUserNav{display:none}
+html.is-admin[data-view="users"] #createUserNav{display:inline-flex}
+
+html[data-view="upload"] #uploadNav{display:none}
+html[data-view="upload"] .list-only{display:none!important}
+/* 用户管理 / 批量建号页：不展示上传入口，改由「注册用户」承担主操作 */
+html[data-view="users"] #uploadNav,
+html[data-view="users-new"] #uploadNav{display:none!important}
+html[data-view="users"] .list-only{display:none!important}
+html[data-view="users-new"] .list-only{display:none!important}
+html[data-view="audit"] .list-only{display:none!important}
+/* 「审计日志」：管理员在主界面与用户管理页都能进；上传/建号/审计页自身不显示 */
+html[data-view="upload"] #auditNav,
+html[data-view="users-new"] #auditNav,
+html[data-view="audit"] #auditNav{display:none!important}
+#backNav{display:none}
+html[data-view="upload"] #backNav{display:inline-flex}
+html[data-view="users"] #backNav{display:inline-flex}
+html[data-view="users-new"] #backNav{display:inline-flex}
+html[data-view="audit"] #backNav{display:inline-flex}
+/* 审计页是只读页面，不提供上传入口，避免误操作打断排查 */
+html[data-view="audit"] #uploadNav{display:none!important}
+html[data-view="login"] .topbar{display:none}
+html[data-view="login"] .wrap{padding-top:0}
+.view[hidden]{display:none!important}
+.view{animation:viewIn .22s ease-out}
+.page-head{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:2px 0 18px}
+.page-head > .btn{flex:none}
+.page-title h2{margin:0;font-size:19px;font-weight:650;letter-spacing:-.015em;line-height:1.4}
+
+/* ---------- 登录页 ---------- */
+.login-view{display:flex;align-items:center;justify-content:center;
+  min-height:calc(100vh - 80px);padding:36px 0}
+
+/* ---------- 筛选 ---------- */
+.filters{margin:0 0 16px;padding:12px 14px;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-lg);box-shadow:var(--shadow-sm)}
+/* 单行栅格：搜索自适应，其余按内容固定，所有控件同一高度 */
+.filter-row{display:grid;grid-template-columns:minmax(150px,1fr) 132px auto 132px auto auto;
+  gap:8px;align-items:center}
+.filter-row .search{flex:none;max-width:none;min-width:0}
+.filter-row select,.filter-row input[type=date],.filter-ver{font-size:12.5px}
+.filter-row select{width:100%}
+.filter-ver{width:100%}
+/* 日期范围成组，两个原生日期控件之间只留一个“至” */
+.filter-range{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.filter-range input[type=date]{width:126px;padding:0 4px 0 10px;font-size:12px}
+.filter-range input[type=date]::-webkit-calendar-picker-indicator{margin:0 0 0 2px;
+  opacity:.55;cursor:pointer}
+.range-sep{font-size:12px;color:var(--text-3);line-height:1}
+.filter-row .switch{justify-self:start;height:var(--ctl-h)}
+#filterCount b{color:var(--text-2)}
+
+/* ---------- 上传页布局 ---------- */
+.up-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-items:start}

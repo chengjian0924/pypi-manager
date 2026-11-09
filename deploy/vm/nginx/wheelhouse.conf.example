@@ -1,0 +1,40 @@
+# 方案 A（虚拟机直接部署）可选：前置 Nginx 终止 TLS 的参考配置
+# 后端按 wheelhouse.env 的默认值只监听 127.0.0.1:8080，不直接暴露到内网。
+# 安装：sudo cp deploy/vm/nginx/wheelhouse.conf.example \
+#             /etc/nginx/conf.d/wheelhouse.conf
+#       sudo nginx -t && sudo systemctl reload nginx
+# 证书请自行替换为企业内网 CA 签发的证书，不要用自签名证书供 pip 直连。
+
+server {
+    listen 443 ssl http2;
+    server_name wheelhouse.intra.example.com;
+
+    ssl_certificate     /etc/nginx/tls/wheelhouse.crt;
+    ssl_certificate_key /etc/nginx/tls/wheelhouse.key;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+
+    # 与 VM_WH_MAX_UPLOAD_MB 保持一致（默认 512）
+    client_max_body_size 512m;
+    # 上传流式转发，避免 Nginx 先把整个 wheel 缓存到磁盘
+    proxy_request_buffering off;
+    proxy_buffering off;
+    proxy_read_timeout 600s;
+    proxy_send_timeout 600s;
+
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+# 明文访问一律跳转到 HTTPS（pip / 浏览器都不会误用 HTTP）
+server {
+    listen 80;
+    server_name wheelhouse.intra.example.com;
+    return 301 https://$host$request_uri;
+}

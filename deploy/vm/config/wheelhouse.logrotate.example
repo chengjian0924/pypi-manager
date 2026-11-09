@@ -1,0 +1,33 @@
+# ============================================================================
+# 方案 A（内网虚拟机直接部署）：运行日志轮转
+# ----------------------------------------------------------------------------
+# 适用场景：用 deploy/vm/bin/start.sh 后台模式启动（nohup 重定向到
+#          $VM_WH_LOG_DIR/wheelhouse.log），日志文件会持续增长，必须轮转。
+#
+# 不适用：systemd 托管（ExecStart=start.sh --foreground）时进程写 journald，
+#         journald 自身有容量上限，由 /etc/systemd/journald.conf 的
+#         SystemMaxUse= 控制，不要再用本文件，否则会重复管理。
+#
+# 安装：
+#   sudo cp deploy/vm/config/wheelhouse.logrotate.example \
+#           /etc/logrotate.d/wheelhouse
+#   sudo logrotate -d /etc/logrotate.d/wheelhouse   # 先 dry-run 看计划
+#   sudo logrotate -f /etc/logrotate.d/wheelhouse   # 强制执行一次验证
+#
+# 说明：进程以 O_APPEND 持有文件句柄，无法通过 rename 让它重新打开，
+#       因此用 copytruncate（复制后原地截断）。代价是复制与截断之间
+#       写入的少量行可能丢失，日志场景可接受。
+# ============================================================================
+
+/var/log/wheelhouse/wheelhouse.log {
+    daily
+    rotate 14
+    maxsize 50M
+    missingok
+    notifempty
+    compress
+    delaycompress
+    copytruncate
+    create 0640 wheelhouse wheelhouse
+    su wheelhouse wheelhouse
+}

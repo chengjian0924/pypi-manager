@@ -1,0 +1,24 @@
+*,*::before,*::after{box-sizing:border-box}
+/* 组件常给 display:flex/inline-flex，会盖掉 hidden 属性的 UA 样式，这里统一兜底 */
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;min-height:100vh;background-color:var(--bg);color:var(--text);
+  font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif;
+  -webkit-font-smoothing:antialiased;
+  background-image:radial-gradient(900px 420px at 100% -8%,var(--glow-1),transparent 70%),
+                   radial-gradient(720px 380px at -10% -4%,var(--glow-2),transparent 65%);
+  background-repeat:no-repeat;background-attachment:fixed}
+::selection{background:var(--accent-soft);color:var(--text)}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+button{font:inherit}
+:focus-visible{outline:none;box-shadow:var(--focus)}
+.wrap{max-width:1160px;margin:0 auto;padding:0 24px 64px}
+.mono{font-family:var(--mono)}
+.truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@keyframes slide{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes pop{from{opacity:0;transform:translateY(10px) scale(.99)}to{opacity:1;transform:none}}
+@keyframes viewIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+::view-transition-old(root){animation:fade .12s ease-out}
+::view-transition-new(root){animation:fade .18s ease-out}

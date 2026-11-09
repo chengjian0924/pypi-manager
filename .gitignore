@@ -1,0 +1,35 @@
+# --- macOS / 编辑器 ---------------------------------------------------------
+.DS_Store
+._*
+*.swp
+.idea/
+
+# --- Python ----------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+
+# --- 运行时数据与日志（本机跑测试/实例产生，不入库） -----------------------
+*.log
+*.pid
+*.db
+*.db-wal
+*.db-shm
+watchdog.state
+watchdog.pause
+
+# --- 部署产物与敏感配置 ----------------------------------------------------
+# 子目录内另有各自的 .gitignore，这里做兜底，防止从根目录误加
+deploy/docker/.env
+deploy/docker/runtime/
+deploy/docker/dist/
+deploy/vm/config/wheelhouse.env
+deploy/vm/run/
+deploy/vm/logs/
+
+# --- 工具本地状态（含会话记忆；如需版本化项目笔记，删掉这行即可） ----------
+.workbuddy/
